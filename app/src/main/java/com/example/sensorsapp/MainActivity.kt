@@ -61,12 +61,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         if(event?.sensor?.type == Sensor.TYPE_LIGHT){
             val light_value = event.values[0]
             val maxvalue = light_sensor.getDefaultSensor(Sensor.TYPE_LIGHT).maximumRange
-            if(light_value < 5)
-                ratingBar.numStars = 1
-            else if(light_value < 100)
-                ratingBar.numStars = 5
-            else
-                ratingBar.numStars = 8
+            ratingBar.rating = light_value/5000
         }
     }
 
