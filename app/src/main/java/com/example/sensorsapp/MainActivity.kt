@@ -1,76 +1,71 @@
 package com.example.sensorsapp
 
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.graphics.Color
-import android.hardware.Sensor
-import android.hardware.SensorEvent
-import android.hardware.SensorEventListener
-import android.hardware.SensorManager
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.RatingBar
 import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
+import java.util.*
+import kotlin.time.*
 
-class MainActivity : AppCompatActivity(), SensorEventListener {
 
-    private lateinit var light_sensor: SensorManager
+class  MainActivity : AppCompatActivity()  {
 
-    private lateinit var acc_sensor: SensorManager
 
     private lateinit var square: TextView
 
     private lateinit var ratingBar: RatingBar
 
+    private lateinit var receiver: LightLevelReceiver
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+
         square = findViewById(R.id.square)
         ratingBar = findViewById(R.id.ratingBar)
 
-        setUpSensor()
+        val intent = Intent(this, SensorsIntentService::class.java)
+        startService(intent)
+
+        receiver = LightLevelReceiver()
+        registerReceiver(receiver,  IntentFilter("GET_SENSORS_DATA"))
+        Timer().scheduleAtFixedRate(object : TimerTask() {
+            override fun run() {
+
+//
+                    val lightValue = receiver.getLight()
+                    val coordinates = receiver.getCoordinates()
+                    val color = if(coordinates[0].toInt() == 0 && coordinates[1].toInt() == 0) Color.GREEN else Color.GRAY
+                    square.setBackgroundColor(color)
+                    ratingBar.rating = lightValue/5000
+
+
+            }
+        }, 0, 5000)
     }
 
-    private fun setUpSensor() {
-        acc_sensor = getSystemService(SENSOR_SERVICE) as SensorManager
-        acc_sensor.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)?.also {
-            acc_sensor.registerListener(this,
-                it,
-                SensorManager.SENSOR_DELAY_FASTEST,
-                SensorManager.SENSOR_DELAY_FASTEST
-            )
+     class LightLevelReceiver : BroadcastReceiver() {
+         private var coordinates = floatArrayOf(0.0F, 0.0F)
+
+         private var light = 0.0F
+        override fun onReceive(context: Context?, intent: Intent) {
+            if (intent.action == "GET_SENSORS_DATA") {
+                light = intent.getFloatExtra("LIGHT_DATA", 0.0F)
+                coordinates = intent.getFloatArrayExtra("ACCEL_DATA")!!
+            }
         }
-
-        light_sensor = getSystemService(SENSOR_SERVICE) as SensorManager
-        light_sensor.getDefaultSensor(Sensor.TYPE_LIGHT)?.also {
-            acc_sensor.registerListener(this,
-                it,
-                SensorManager.SENSOR_DELAY_FASTEST,
-                SensorManager.SENSOR_DELAY_FASTEST
-            )
-        }
-    }
-
-    override fun onSensorChanged(event: SensorEvent?) {
-        if(event?.sensor?.type == Sensor.TYPE_ACCELEROMETER){
-            val sides = event.values[0]
-            val updown = event.values[1]
-
-            val color = if(updown.toInt() == 0 && sides.toInt() == 0) Color.GREEN else Color.GRAY
-            square.setBackgroundColor(color)
-        }
-        if(event?.sensor?.type == Sensor.TYPE_LIGHT){
-            val light_value = event.values[0]
-            val maxvalue = light_sensor.getDefaultSensor(Sensor.TYPE_LIGHT).maximumRange
-            ratingBar.rating = light_value/5000
-        }
-    }
-
-    override fun onAccuracyChanged(p0: Sensor?, p1: Int) {
-        return
-    }
-
-    override fun onDestroy() {
-        acc_sensor.unregisterListener(this)
-        super.onDestroy()
+         fun getLight(): Float {
+             return light
+         }
+         fun getCoordinates(): FloatArray{
+             return  coordinates
+         }
     }
 }
