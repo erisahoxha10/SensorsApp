@@ -20,6 +20,8 @@ class  MainActivity : AppCompatActivity()  {
 
     private lateinit var ratingBar: RatingBar
 
+    private lateinit var brightnessBar: TextView
+
     private lateinit var receiver: LightLevelReceiver
 
 
@@ -30,6 +32,7 @@ class  MainActivity : AppCompatActivity()  {
 
         square = findViewById(R.id.square)
         ratingBar = findViewById(R.id.ratingBar)
+        brightnessBar = findViewById(R.id.brightnessTxt)
 
         val intent = Intent(this, SensorsIntentService::class.java)
         startService(intent)
@@ -39,20 +42,36 @@ class  MainActivity : AppCompatActivity()  {
         Timer().scheduleAtFixedRate(object : TimerTask() {
             override fun run() {
 
-//
-                    val lightValue = receiver.getLight()
-                    val coordinates = receiver.getCoordinates()
-                    val color = if(coordinates[0].toInt() == 0 && coordinates[1].toInt() == 0) Color.GREEN else Color.GRAY
-                    square.setBackgroundColor(color)
-                    ratingBar.rating = lightValue/5000
+                val lightValue = receiver.getLight()
+                val coordinates = receiver.getCoordinates()
+                var color: Int
+                var text: String = ""
+                if(coordinates[0].toInt() == 0 && coordinates[1].toInt() == 0){
+                    color = Color.GREEN
+                    text = "standing still"
+                } else {
+                    color = Color.GRAY
+                    text = if(coordinates[0].toInt() != 0) "rotating left/right ⇄/n" else ""
+                    text += if (coordinates[1].toInt() != 0) "rotating up/down ⇅" else ""
 
+                }
+                square.setBackgroundColor(color)
+                square.setText(text)
+                ratingBar.rating = lightValue/5000F
+                brightnessBar.text = when (ratingBar.rating.toInt()/2){
+                    0 -> "No light!"
+                    1 -> "A little light"
+                    2 -> "Bright!"
+                    3 -> "So bright"
+                    else -> "Blinding light!"
+                }
 
             }
-        }, 0, 5000)
+        }, 0, 1000)
     }
 
      class LightLevelReceiver : BroadcastReceiver() {
-         private var coordinates = floatArrayOf(0.0F, 0.0F)
+         private var coordinates = floatArrayOf(0.0F, 0.0F, 0.0F, 0.0F)
 
          private var light = 0.0F
         override fun onReceive(context: Context?, intent: Intent) {
