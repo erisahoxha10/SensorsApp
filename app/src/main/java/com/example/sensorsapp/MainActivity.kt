@@ -51,7 +51,7 @@ class  MainActivity : AppCompatActivity()  {
                     text = "standing still"
                 } else {
                     color = Color.GRAY
-                    text = if(coordinates[0].toInt() != 0) "rotating left/right ⇄/n" else ""
+                    text = if(coordinates[0].toInt() != 0) "rotating left/right ⇄\n" else ""
                     text += if (coordinates[1].toInt() != 0) "rotating up/down ⇅" else ""
 
                 }
@@ -71,7 +71,7 @@ class  MainActivity : AppCompatActivity()  {
     }
 
      class LightLevelReceiver : BroadcastReceiver() {
-         private var coordinates = floatArrayOf(0.0F, 0.0F, 0.0F, 0.0F)
+         private var coordinates = floatArrayOf(0.0F, 0.0F)
 
          private var light = 0.0F
         override fun onReceive(context: Context?, intent: Intent) {
